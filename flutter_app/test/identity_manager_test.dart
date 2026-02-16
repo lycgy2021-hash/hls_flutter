@@ -1,45 +1,58 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flutter_app/services/identity_manager.dart';
-import 'package:flutter_app/services/storage_service.dart';
+import 'package:flutter_app/services/identity/identity_manager.dart';
+
+import 'helpers/in_memory_kv_store.dart';
 
 void main() {
   group('IdentityManager', () {
     test('did stays stable across re-init', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-
-      final storage1 = StorageService();
-      await storage1.init();
-      final manager1 = IdentityManager(storage1);
+      final store = InMemoryKvStore();
+      final manager1 = IdentityManager(kvStore: store, nowMs: () => 1000);
       await manager1.init();
-      final did1 = manager1.did;
+      final did1 = await manager1.getDid();
 
-      final storage2 = StorageService();
-      await storage2.init();
-      final manager2 = IdentityManager(storage2);
+      final manager2 = IdentityManager(kvStore: store, nowMs: () => 2000);
       await manager2.init();
-      final did2 = manager2.did;
+      final did2 = await manager2.getDid();
 
       expect(did1, isNotEmpty);
       expect(did1, did2);
-      expect(manager2.actorId.startsWith('a_'), true);
+      expect((await manager2.getActorId()).startsWith('a_'), true);
     });
 
-    test('session rotates when ttl expired', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'did': 'did_fixed',
-        'hls_actor_id': 'a_fixed',
-        'hls_session_id': 's_old',
-        'hls_session_created_at': 0,
-      });
+    test('actor_id prefix repair triggers session reset', () async {
+      final store = InMemoryKvStore();
+      await store.writeString(didKey, 'did_fixed_123');
+      await store.writeString(actorIdKey, 'polluted_actor_id');
+      await store.writeString(sessionIdKey, 's_old');
+      await store.writeInt(sessionCreatedAtKey, 1234);
 
-      final storage = StorageService();
-      await storage.init();
-      final manager = IdentityManager(storage);
+      final manager = IdentityManager(kvStore: store, nowMs: () => 2000);
       await manager.init();
 
-      expect(manager.sessionId, isNot('s_old'));
+      final repairedActor = await manager.getActorId();
+      final session = await manager.getSessionId();
+
+      expect(repairedActor, startsWith('a_'));
+      expect(session, isNull);
+    });
+
+    test('session TTL expiry clears session', () async {
+      final store = InMemoryKvStore();
+      await store.writeString(didKey, 'did_fixed_abc');
+      await store.writeString(actorIdKey, 'a_fixed_abc');
+
+      int now = 1000;
+      final manager = IdentityManager(kvStore: store, nowMs: () => now);
+      await manager.init();
+      await manager.setSession('s_live', 100);
+      now = 1205;
+      final session = await manager.getSessionId();
+
+      expect(session, isNull);
+      expect(store.readString(sessionIdKey), isNull);
+      expect(store.readInt(sessionCreatedAtKey), isNull);
     });
   });
 }
