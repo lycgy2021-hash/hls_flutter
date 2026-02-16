@@ -54,7 +54,7 @@ class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
           IconButton(
             onPressed: () async {
               await _authController.logout();
-              Get.offAllNamed(AppRoutes.login);
+              Get.offAllNamed(AppRoutes.home);
             },
             icon: const Icon(Icons.logout),
           ),

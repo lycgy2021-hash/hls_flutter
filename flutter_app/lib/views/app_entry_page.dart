@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../config/app_routes.dart';
-import '../controllers/auth_controller.dart';
 
 class AppEntryPage extends StatefulWidget {
   const AppEntryPage({super.key});
@@ -16,8 +15,7 @@ class _AppEntryPageState extends State<AppEntryPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Get.find<AuthController>();
-      Get.offAllNamed(auth.loggedIn.value ? AppRoutes.feed : AppRoutes.login);
+      Get.offAllNamed(AppRoutes.home);
     });
   }
 

@@ -1,23 +1,29 @@
+import 'env/env_dev.dart';
+import 'env/env_prod.dart';
+import 'env/env_staging.dart';
+import 'env/env_values.dart';
+
 class AppConfig {
-  static const String apiBase = String.fromEnvironment(
-    'API_BASE',
-    defaultValue: 'http://192.168.0.107:8080',
-  );
+  static const String _appEnv =
+      String.fromEnvironment('APP_ENV', defaultValue: 'dev');
 
-  static const String apiNewBase = String.fromEnvironment(
-    'API_NEW_BASE',
-    defaultValue: 'http://192.168.0.107:8099',
-  );
+  static EnvValues get currentEnv {
+    switch (_appEnv) {
+      case 'prod':
+        return prodEnv;
+      case 'staging':
+        return stagingEnv;
+      case 'dev':
+      default:
+        return devEnv;
+    }
+  }
 
-  static const String algoBase = String.fromEnvironment(
-    'ALGO_BASE',
-    defaultValue: 'http://192.168.0.107:8083',
-  );
-
-  static const String longVideoBase = String.fromEnvironment(
-    'LONG_VIDEO_BASE',
-    defaultValue: 'http://192.168.0.107:8081',
-  );
+  static String get envLabel => currentEnv.label;
+  static String get apiBase => currentEnv.apiBase;
+  static String get apiNewBase => currentEnv.apiNewBase;
+  static String get algoBase => currentEnv.algoBase;
+  static String get longVideoBase => currentEnv.longVideoBase;
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);

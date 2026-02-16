@@ -41,7 +41,7 @@ class LoginPage extends GetView<AuthController> {
                       : () async {
                           final ok = await controller.login();
                           if (ok) {
-                            Get.offAllNamed(AppRoutes.feed);
+                            Get.offAllNamed(AppRoutes.home);
                           }
                         },
                   child: controller.loading.value

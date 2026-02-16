@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'config/app_bindings.dart';
+import 'config/app_config.dart';
 import 'config/app_routes.dart';
 import 'utils/app_logger.dart';
 
@@ -16,14 +17,14 @@ class MigrationApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    AppLogger.info('App started');
+    AppLogger.tag('APP')
+        .logInfo('App started', data: {'env': AppConfig.envLabel});
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Short Video Flutter',
-      initialRoute: AppRoutes.entry,
+      title: 'Short Video Flutter (${AppConfig.envLabel})',
+      initialRoute: AppRoutes.splash,
       getPages: AppRoutes.pages,
       defaultTransition: Transition.cupertino,
     );
   }
 }
-"// break" 
