@@ -35,6 +35,7 @@ void main() {
       final session = await manager.getSessionId();
 
       expect(repairedActor, startsWith('a_'));
+      expect(repairedActor, isNot('a_did_fixed_123'));
       expect(session, isNull);
     });
 
@@ -46,8 +47,8 @@ void main() {
       int now = 1000;
       final manager = IdentityManager(kvStore: store, nowMs: () => now);
       await manager.init();
-      await manager.setSession('s_live', 100);
-      now = 1205;
+      await manager.setSession('s_live');
+      now = 1000 + sessionTtlMsDefault + 1;
       final session = await manager.getSessionId();
 
       expect(session, isNull);

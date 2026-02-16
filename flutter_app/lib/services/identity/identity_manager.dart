@@ -21,8 +21,6 @@ class IdentityManager {
   final Uuid _uuid;
   final int Function() _nowMs;
 
-  int _sessionTtlMs = sessionTtlMsDefault;
-
   Future<void> init() async {
     await _kvStore.init();
     await getDid();
@@ -36,7 +34,7 @@ class IdentityManager {
       return existing;
     }
 
-    final generated = _uuid.v4();
+    final generated = _generateDid();
     await _kvStore.writeString(didKey, generated);
     return generated;
   }
@@ -44,15 +42,13 @@ class IdentityManager {
   Future<String> getActorId() async {
     final existing = _kvStore.readString(actorIdKey);
     if (existing == null || existing.isEmpty) {
-      final did = await getDid();
-      final generated = 'a_${did.replaceAll('-', '')}';
+      final generated = _generateActorId();
       await _kvStore.writeString(actorIdKey, generated);
       return generated;
     }
 
     if (!existing.startsWith('a_')) {
-      final did = await getDid();
-      final repaired = 'a_${did.replaceAll('-', '')}';
+      final repaired = _generateActorId();
       await _kvStore.writeString(actorIdKey, repaired);
       await clearSession();
       return repaired;
@@ -64,8 +60,7 @@ class IdentityManager {
   Future<void> setActorId(String value) async {
     if (value.isEmpty) return;
     if (!value.startsWith('a_')) {
-      final did = await getDid();
-      final repaired = 'a_${did.replaceAll('-', '')}';
+      final repaired = _generateActorId();
       await _kvStore.writeString(actorIdKey, repaired);
       await clearSession();
       return;
@@ -81,7 +76,7 @@ class IdentityManager {
       return null;
     }
 
-    if (_nowMs() - createdAt > _sessionTtlMs) {
+    if (_nowMs() - createdAt > sessionTtlMsDefault) {
       await clearSession();
       return null;
     }
@@ -89,8 +84,7 @@ class IdentityManager {
     return sessionId;
   }
 
-  Future<void> setSession(String sessionId, int ttlMs) async {
-    _sessionTtlMs = ttlMs;
+  Future<void> setSession(String sessionId) async {
     await _kvStore.writeString(sessionIdKey, sessionId);
     await _kvStore.writeInt(sessionCreatedAtKey, _nowMs());
   }
@@ -106,5 +100,13 @@ class IdentityManager {
     if (existing == null || existing.isEmpty) {
       await _kvStore.writeString(didKey, did);
     }
+  }
+
+  String _generateDid() {
+    return _uuid.v4();
+  }
+
+  String _generateActorId() {
+    return 'a_${_generateDid()}';
   }
 }

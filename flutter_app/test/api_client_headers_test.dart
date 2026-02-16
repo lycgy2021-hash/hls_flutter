@@ -60,6 +60,8 @@ void main() {
       final options = adapter.lastRequestOptions;
       expect(options?.path, Endpoints.userLogin);
       expect(options?.headers[contentType], formUrlEncoded);
+      expect(options?.headers.containsKey(xActorId), isTrue);
+      expect(options?.headers.containsKey(xDid), isTrue);
       final body = '${options?.data ?? ''}';
       expect(body.contains('uid=u001'), isTrue);
       expect(body.contains('password=p001'), isTrue);

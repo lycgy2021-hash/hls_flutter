@@ -59,7 +59,7 @@ class AuthService {
 
     final sessionId = data['session_id']?.toString();
     if (sessionId != null && sessionId.isNotEmpty) {
-      await _identityManager.setSession(sessionId, sessionTtlMsDefault);
+      await _identityManager.setSession(sessionId);
     }
 
     return response;
