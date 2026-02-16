@@ -29,7 +29,7 @@ From docs, key Vue route groups are:
 - Other domain:
   - `/shop`, `/publish`
 
-### 0.3 API and transport behavior (doc-derived)
+### 0.3 API and transport behavior (code-verified from `E:\hls\webdemo`, read-only)
 Base URLs (must be environment switchable):
 - Main API: `http://192.168.0.107:8080`
 - Algo API: `http://192.168.0.107:8083`
@@ -54,13 +54,21 @@ Critical endpoint groups to preserve:
   - `POST /video/comments`
 
 Headers/auth behavior to preserve:
-- `X-Actor-ID`
-- `X-DID`
-- optional `Authorization` when logged in
+- global request headers (from `src/utils/request.ts`):
+  - `X-Actor-ID`
+  - `X-DID`
+- login request header (from `src/api/user.ts`):
+  - `Content-Type: application/x-www-form-urlencoded; charset=UTF-8`
+- conditional message request header (from `src/api/message.ts`):
+  - `If-None-Match`
+- note:
+  - current Vue global interceptor does **not** inject `Authorization` by default;
+  - if Flutter introduces token auth, keep it optional and endpoint-compatible.
 
 Pagination/response compatibility to preserve:
-- `offset/count` or `pageNo/pageSize` style from existing contracts
-- feed index progression with `index/dir/step`
+- `offset/limit` style on content APIs (`/post/recommended/by-upid`, `/post/recommended/list`)
+- `pageNo/pageSize` style on group APIs (`/group/list`, `/group/{id}/messages`)
+- feed progression fields: `index/dir/step` (or `step_index`)
 - response normalization from `code=0` or `code=200` to success
 
 ### 0.4 BaseVideo responsibilities (doc-derived)
@@ -81,7 +89,7 @@ From migration docs around `BaseVideo.vue`, Flutter implementation must preserve
   - active item play, inactive item pause/release
   - app pause/resume handling
 
-### 0.5 Identity/session logic (doc-derived)
+### 0.5 Identity/session logic (code-verified from `src/utils/session.ts`)
 Identity model to preserve and enforce:
 - `did`:
   - stable device id, generate once and persist
@@ -92,6 +100,8 @@ Identity model to preserve and enforce:
 
 Storage keys and risks:
 - keys include `did`, `hls_actor_id`, `hls_session_id`, `hls_session_created_at`
+- additional related keys: `hls_autoplay_unlocked`, `hls_browser_fp`, `hls_actor_synced`
+- session ttl in Vue: `SESSION_TTL_MS = 7 * 24 * 3600 * 1000`
 - overwrite risk: accidental mapping between `did` and `actor_id`
 - mitigation: dedicated manager and key-level validation
 
@@ -205,7 +215,9 @@ Auth/User:
 Headers:
 - [ ] `X-Actor-ID`
 - [ ] `X-DID`
-- [ ] `Authorization` (if token exists)
+- [ ] `Content-Type: application/x-www-form-urlencoded; charset=UTF-8` on `/user/login`
+- [ ] `If-None-Match` support on conditional conversation pull
+- [ ] `Authorization` only if backend contract requires it (not assumed globally)
 
 Feed/session/feedback:
 - [ ] `POST /api/next` with `actor_id,session_id,index,dir,step,device_id`
@@ -221,6 +233,7 @@ Interaction:
 - [ ] `POST /video/comments`
 
 Pagination/response fields:
-- [ ] preserve offset/count or pageNo/pageSize semantics
+- [ ] preserve `offset/limit` semantics on content endpoints
+- [ ] preserve `pageNo/pageSize` semantics on group endpoints
 - [ ] preserve index/dir/step feed semantics
 - [ ] normalize `code=0/200` success behavior consistently
